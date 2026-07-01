@@ -58,7 +58,7 @@
                       layoutY="5"
                       spacing="2">
 
-                    <Label text="Faculty Login Portal"
+                    <Label text="Administrator Login Portal"
                            style="
                                -fx-font-size: 28px;
                                -fx-font-weight: bold;
@@ -138,7 +138,7 @@
                     <VBox alignment="CENTER"
                           spacing="2">
 
-                        <Label text="Faculty Access"
+                        <Label text="Administrator Access"
                                style="
                                    -fx-font-size: 28px;
                                    -fx-font-weight: bold;
