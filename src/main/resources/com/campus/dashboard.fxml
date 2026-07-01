@@ -39,7 +39,7 @@
                       layoutY="10"
                       spacing="2">
 
-                    <Label text="Faculty Dashboard"
+                    <Label text="Administrator Dashboard"
                            style="
                                -fx-font-size: 30px;
                                -fx-font-weight: bold;
