@@ -160,7 +160,7 @@
 
                     <VBox alignment="CENTER" spacing="4" maxWidth="Infinity">
 
-                        <Label text="Faculty"
+                        <Label text="Administrator"
                                maxWidth="Infinity"
                                style="
                    -fx-font-size: 40px;
