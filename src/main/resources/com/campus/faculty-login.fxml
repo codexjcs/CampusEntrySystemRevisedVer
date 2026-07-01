@@ -235,7 +235,7 @@
                             <Label text="Username:"
                                    style="-fx-text-fill: #64748b;"/>
 
-                            <Label text="faculty"
+                            <Label text="admin"
                                    style="
                                        -fx-font-weight: bold;
                                        -fx-text-fill: #8B0000;
