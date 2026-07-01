@@ -16,6 +16,9 @@ import java.time.format.DateTimeFormatter;
  * Fix: students no longer has a plain 'course' column.
  * All queries now join the courses table to resolve course_id → course code.
  * year_level is a SMALLINT; cast to text via CAST(s.year_level AS TEXT).
+ *
+ * Update: added support for filtering exports by date and/or gender.
+ * Gender is assumed to live on the students table (s.gender).
  */
 public class LogExporter {
 
@@ -26,7 +29,7 @@ public class LogExporter {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private static final String CSV_HEADER =
-            "ID,Student ID,Full Name,Course,Year Level,Action,Timestamp";
+            "ID,Student ID,Full Name,Course,Year Level,Gender,Action,Timestamp";
 
     // ── Shared SQL fragment ───────────────────────────────────────────────────
     // Join courses so we get the human-readable course code.
@@ -37,6 +40,7 @@ public class LogExporter {
                    s.full_name,
                    s.course,
                    s.year_level,
+                   s.gender,
                    a.action,
                    a.timestamp
               FROM attendance a
@@ -85,6 +89,35 @@ public class LogExporter {
                 + " ORDER BY a.timestamp DESC";
         String prefix = "attendance_" + date + "_";
         return runExportWithDateParam(sql, date, directory, prefix);
+    }
+
+    /**
+     * Export attendance records for a specific gender (e.g. "M", "F", or
+     * whatever values the students.gender column uses).
+     */
+    public static File exportByGender(String gender,
+                                      Path directory) throws IOException, SQLException {
+        String sql = SELECT_COLS
+                + " WHERE s.gender = ?"
+                + " ORDER BY a.timestamp DESC";
+        String prefix = "attendance_gender_" + gender.replaceAll("[^a-zA-Z0-9]", "_") + "_";
+        return runExportWithParam(sql, gender, directory, prefix);
+    }
+
+    /**
+     * Export attendance records filtered by BOTH a specific date and gender.
+     * The date is bound as a proper java.sql.Date (see exportByDate for why),
+     * and gender is bound as a String.
+     */
+    public static File exportByDateAndGender(Path directory,
+                                             LocalDate date,
+                                             String gender) throws IOException, SQLException {
+        String sql = SELECT_COLS
+                + " WHERE DATE(a.timestamp) = ?"
+                + "   AND s.gender = ?"
+                + " ORDER BY a.timestamp DESC";
+        String prefix = "attendance_" + date + "_" + gender.replaceAll("[^a-zA-Z0-9]", "_") + "_";
+        return runExportWithDateAndGenderParam(sql, date, gender, directory, prefix);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -167,6 +200,38 @@ public class LogExporter {
         return out;
     }
 
+    /**
+     * Binds a {@link java.sql.Date} as param 1 and a gender String as param 2.
+     * Used exclusively by {@link #exportByDateAndGender}.
+     */
+    private static File runExportWithDateAndGenderParam(String sql,
+                                                         LocalDate date,
+                                                         String gender,
+                                                         Path dir,
+                                                         String prefix) throws IOException, SQLException {
+
+        Files.createDirectories(dir);
+        File out = dir.resolve(prefix + FILE_TS.format(LocalDateTime.now()) + ".csv")
+                      .toFile();
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setDate(1, java.sql.Date.valueOf(date));
+            ps.setString(2, gender);
+
+            try (ResultSet rs = ps.executeQuery();
+                PrintWriter pw = new PrintWriter(
+                    new OutputStreamWriter(new FileOutputStream(out),
+                                           StandardCharsets.UTF_8))) {
+
+                pw.println(CSV_HEADER);
+                while (rs.next()) pw.println(row(rs));
+            }
+        }
+        return out;
+    }
+
     /** Format a single ResultSet row as a CSV line. */
     private static String row(ResultSet rs) throws SQLException {
         return String.join(",",
@@ -175,6 +240,7 @@ public class LogExporter {
                 escape(rs.getString("full_name")),
                 escape(rs.getString("course")),       // resolved via courses JOIN
                 escape(rs.getString("year_level")),   // cast to text in SQL
+                escape(rs.getString("gender")),
                 escape(rs.getString("action")),
                 escape(DISPLAY_TS.format(
                         rs.getTimestamp("timestamp").toLocalDateTime()))
