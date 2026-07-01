@@ -18,7 +18,8 @@ import java.time.format.DateTimeFormatter;
  * year_level is a SMALLINT; cast to text via CAST(s.year_level AS TEXT).
  *
  * Update: added support for filtering exports by date and/or gender.
- * Gender is assumed to live on the students table (s.gender).
+ * Gender lives on the students table as the column "sex" (s.sex),
+ * not "gender" — schema.sql defines students.sex VARCHAR(1) CHECK (M/F).
  */
 public class LogExporter {
 
@@ -40,7 +41,7 @@ public class LogExporter {
                    s.full_name,
                    s.course,
                    s.year_level,
-                   s.gender,
+                   s.sex,
                    a.action,
                    a.timestamp
               FROM attendance a
@@ -98,7 +99,7 @@ public class LogExporter {
     public static File exportByGender(String gender,
                                       Path directory) throws IOException, SQLException {
         String sql = SELECT_COLS
-                + " WHERE s.gender = ?"
+                + " WHERE s.sex = ?"
                 + " ORDER BY a.timestamp DESC";
         String prefix = "attendance_gender_" + gender.replaceAll("[^a-zA-Z0-9]", "_") + "_";
         return runExportWithParam(sql, gender, directory, prefix);
@@ -114,7 +115,7 @@ public class LogExporter {
                                              String gender) throws IOException, SQLException {
         String sql = SELECT_COLS
                 + " WHERE DATE(a.timestamp) = ?"
-                + "   AND s.gender = ?"
+                + "   AND s.sex = ?"
                 + " ORDER BY a.timestamp DESC";
         String prefix = "attendance_" + date + "_" + gender.replaceAll("[^a-zA-Z0-9]", "_") + "_";
         return runExportWithDateAndGenderParam(sql, date, gender, directory, prefix);
@@ -240,7 +241,7 @@ public class LogExporter {
                 escape(rs.getString("full_name")),
                 escape(rs.getString("course")),       // resolved via courses JOIN
                 escape(rs.getString("year_level")),   // cast to text in SQL
-                escape(rs.getString("gender")),
+                escape(rs.getString("sex")),
                 escape(rs.getString("action")),
                 escape(DISPLAY_TS.format(
                         rs.getTimestamp("timestamp").toLocalDateTime()))
