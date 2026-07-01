@@ -38,9 +38,11 @@ public class DashboardController {
     // ── CRUD action buttons ──────────────────────────────────────────────────
     @FXML private Button deleteButton;
 
-    // ── Date filter ──────────────────────────────────────────────────────────
+    // ── Date + gender filter (export) ────────────────────────────────────────
     @FXML private DatePicker exportDatePicker;
     @FXML private Button exportByDateButton;
+    @FXML private ComboBox<String> exportGenderComboBox;
+    @FXML private Button exportByGenderButton;
 
     // ── Sex filter (currently timed-in) ──────────────────────────────────────
     @FXML private ComboBox<String> sexFilterComboBox;
@@ -76,6 +78,11 @@ public class DashboardController {
                     "All", "Male Only", "Female Only"));
             sexFilterComboBox.setValue("All");
             sexFilterComboBox.valueProperty().addListener((obs, oldV, newV) -> applySexFilter());
+        }
+
+        // Gender combo used for export filtering (values match students.sex: M/F)
+        if (exportGenderComboBox != null) {
+            exportGenderComboBox.setItems(FXCollections.observableArrayList("M", "F"));
         }
 
         setupColumns();
@@ -273,6 +280,72 @@ public class DashboardController {
             showAlert(Alert.AlertType.INFORMATION, "Export Successful",
                     "CSV for " + selectedDate.format(DATE_FMT) + " saved to:\n"
                             + csv.getAbsolutePath());
+        } catch (Exception e) {
+            showAlert(Alert.AlertType.ERROR, "Export Failed", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Exports attendance log filtered by the date chosen in the DatePicker,
+     * and (optionally) by the gender chosen in exportGenderComboBox.
+     * If no gender is selected, falls back to date-only export.
+     */
+    @FXML private void exportCSVByDateAndGender() {
+        LocalDate selectedDate = exportDatePicker.getValue();
+
+        if (selectedDate == null) {
+            showAlert(Alert.AlertType.WARNING, "No Date Selected",
+                    "Please pick a date before exporting.");
+            return;
+        }
+
+        String gender = exportGenderComboBox != null ? exportGenderComboBox.getValue() : null;
+
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Choose Export Folder");
+        File dir = chooser.showDialog(MainApp.getStage());
+
+        if (dir == null) return;
+
+        try {
+            File csv = (gender == null)
+                    ? LogExporter.exportByDate(Path.of(dir.toURI()), selectedDate)
+                    : LogExporter.exportByDateAndGender(Path.of(dir.toURI()), selectedDate, gender);
+
+            showAlert(Alert.AlertType.INFORMATION, "Export Successful",
+                    "CSV for " + selectedDate.format(DATE_FMT)
+                            + (gender != null ? " (" + gender + ")" : "")
+                            + " saved to:\n" + csv.getAbsolutePath());
+        } catch (Exception e) {
+            showAlert(Alert.AlertType.ERROR, "Export Failed", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Exports attendance log filtered only by the gender chosen in
+     * exportGenderComboBox (ignores the date picker).
+     */
+    @FXML private void exportCSVByGender() {
+        String gender = exportGenderComboBox != null ? exportGenderComboBox.getValue() : null;
+
+        if (gender == null) {
+            showAlert(Alert.AlertType.WARNING, "No Gender Selected",
+                    "Please pick a gender before exporting.");
+            return;
+        }
+
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Choose Export Folder");
+        File dir = chooser.showDialog(MainApp.getStage());
+
+        if (dir == null) return;
+
+        try {
+            File csv = LogExporter.exportByGender(gender, Path.of(dir.toURI()));
+            showAlert(Alert.AlertType.INFORMATION, "Export Successful",
+                    "CSV for gender " + gender + " saved to:\n" + csv.getAbsolutePath());
         } catch (Exception e) {
             showAlert(Alert.AlertType.ERROR, "Export Failed", e.getMessage());
             e.printStackTrace();
