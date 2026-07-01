@@ -61,12 +61,12 @@ public class DatabaseInitializer {
                 """;
 
             try (PreparedStatement check = conn.prepareStatement(checkSql)) {
-                check.setString(1, "faculty");
+                check.setString(1, "admin");
                 try (ResultSet rs = check.executeQuery()) {
                     if (!rs.next()) {                          // ← only runs once, ever
                         String hash = BCrypt.hashpw("admin123", BCrypt.gensalt());
                         try (PreparedStatement ins = conn.prepareStatement(insertSql)) {
-                            ins.setString(1, "faculty");
+                            ins.setString(1, "admin");
                             ins.setString(2, hash);
                             ins.executeUpdate();
                         }
