@@ -462,8 +462,8 @@
 
                 <Region HBox.hgrow="ALWAYS"/>
 
-                <!-- ================= DATE FILTER + EXPORT ================= -->
-                <!-- Grouped card so the date picker and its button read as one unit -->
+                <!-- ================= DATE + GENDER FILTER + EXPORT ================= -->
+                <!-- Grouped card so the date picker, gender combo, and export button read as one unit -->
                 <HBox spacing="0"
                       alignment="CENTER"
                       style="
@@ -484,7 +484,7 @@
                     <!-- DatePicker -->
                     <DatePicker fx:id="exportDatePicker"
                                 prefHeight="42"
-                                prefWidth="155"
+                                prefWidth="140"
                                 promptText="Pick a date"
                                 style="
                                     -fx-background-color: transparent;
@@ -492,10 +492,21 @@
                                     -fx-padding: 0;
                                 "/>
 
-                    <!-- Export by Date button -->
+                    <!-- Gender combo used for export filtering -->
+                    <ComboBox fx:id="exportGenderComboBox"
+                              prefHeight="42"
+                              prefWidth="110"
+                              promptText="Gender"
+                              style="
+                                  -fx-background-color: transparent;
+                                  -fx-border-color: transparent transparent transparent #e5e7eb;
+                                  -fx-padding: 0;
+                              "/>
+
+                    <!-- Export by Date &amp; Gender button (uses date + gender combo above, gender optional) -->
                     <Button fx:id="exportByDateButton"
-                            text="⇩ Export by Date"
-                            onAction="#exportCSVByDate"
+                            text="⇩ Export"
+                            onAction="#exportCSVByDateAndGender"
                             prefHeight="42"
                             style="
                                 -fx-background-color: #8B0000;
@@ -508,6 +519,21 @@
                             "/>
 
                 </HBox>
+
+                <!-- Standalone Export by Gender button (ignores date, uses exportGenderComboBox selection) -->
+                <Button fx:id="exportByGenderButton"
+                        text="⇩ Export by Gender"
+                        onAction="#exportCSVByGender"
+                        prefHeight="42"
+                        style="
+                            -fx-background-color: #2563eb;
+                            -fx-background-radius: 10;
+                            -fx-text-fill: white;
+                            -fx-font-weight: bold;
+                            -fx-font-size: 13px;
+                            -fx-cursor: hand;
+                            -fx-padding: 0 16 0 16;
+                        "/>
 
                 <!-- Today quick-export button -->
                 <Button text="⇩ Export Today"
